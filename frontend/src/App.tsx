@@ -3,8 +3,6 @@ import { useStudentStore } from "./store/studentStore";
 import { Sidebar } from "./components/Sidebar";
 import { ActionCenter } from "./components/ActionCenter";
 
-// Single query client for the whole app.
-// We keep staleTime short so updates feel responsive in a counseling session.
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

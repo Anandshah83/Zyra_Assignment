@@ -2,8 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchActionCenter, updateTaskStatus } from "./api";
 import type { TaskStatus } from "../types";
 
-// Hook that fetches and caches action center data for a student.
-// React Query handles the loading/error states and re-fetching automatically.
+
 export function useActionCenter(studentId: string) {
   return useQuery({
     queryKey: ["actionCenter", studentId],
@@ -13,8 +12,7 @@ export function useActionCenter(studentId: string) {
   });
 }
 
-// Hook for updating a task's status.
-// On success, it invalidates the cached action center data so the UI refreshes.
+
 export function useUpdateTaskStatus(studentId: string) {
   const queryClient = useQueryClient();
 

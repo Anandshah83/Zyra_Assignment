@@ -1,5 +1,3 @@
-// Official mock data from Zyra — do not modify IDs or structure
-
 export interface Student {
   id: string;
   name: string;

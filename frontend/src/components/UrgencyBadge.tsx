@@ -11,8 +11,6 @@ const labels: Record<UrgencyLevel, string> = {
   low: "Low",
 };
 
-// Shows the urgency level as a colored pill with a dot indicator.
-// The color mapping matches the CSS variables defined in index.css.
 export function UrgencyBadge({ level }: Props) {
   return (
     <span className={`badge badge-${level}`} data-testid="urgency-badge">
