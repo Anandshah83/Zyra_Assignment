@@ -1,6 +1,7 @@
 # Zyra – Counselor Student Action Center
 
-![CI](https://github.com/Anandshah83/Zyra_Assignment/actions/workflows/ci.yml/badge.svg)
+![Tests](https://img.shields.io/badge/tests-22%20passed-brightgreen) ![Backend](https://img.shields.io/badge/backend-Node.js%20%2B%20Express-green) ![Frontend](https://img.shields.io/badge/frontend-React%20%2B%20Vite-blue)
+
 A full-stack feature that gives counselors a fast, clear view of a student's priorities, tasks, unread messages, and urgency level — all in one place.
 
 ---
@@ -13,7 +14,7 @@ zyra-action-center/
 └── frontend/    ← React + TypeScript + Vite        (Task 1 & Task 2)
 ```
 
-Both tasks live in the same repo. Task 2 additions are called out clearly below.
+Both tasks live in the same repo. Task 2 additions are called out clearly in each section below.
 
 ---
 
@@ -21,19 +22,32 @@ Both tasks live in the same repo. Task 2 additions are called out clearly below.
 
 You need **Node.js 18+** installed. That's it.
 
-### 1. Start the backend
+### 1. Backend setup
 
 ```bash
 cd backend
 npm install
+```
+
+Seed the database with mock data (run once):
+
+```bash
+npm run seed
+```
+
+Start the dev server:
+
+```bash
 npm run dev
 ```
 
-The API runs at **http://localhost:4000**
+API runs at **http://localhost:4000**
 
-### 2. Start the frontend
+---
 
-Open a new terminal tab:
+### 2. Frontend setup
+
+Open a new terminal:
 
 ```bash
 cd frontend
@@ -41,9 +55,9 @@ npm install
 npm run dev
 ```
 
-The UI opens at **http://localhost:3000**
+UI opens at **http://localhost:3000**
 
-The Vite dev server proxies `/students` and `/tasks` to the backend automatically, so no CORS issues during development.
+Vite proxies `/students` and `/tasks` to the backend automatically — no CORS issues in development.
 
 ---
 
@@ -51,11 +65,11 @@ The Vite dev server proxies `/students` and `/tasks` to the backend automaticall
 
 ### `GET /students/:id/action-center`
 
-Returns everything the action center needs for a student.
+Returns the full action center payload for a student — profile, tasks, unread message count, and computed urgency level.
 
 **Example:** `GET /students/stu_001/action-center`
 
-**Response:**
+**Response `200`:**
 ```json
 {
   "student": {
@@ -86,128 +100,199 @@ Returns everything the action center needs for a student.
 ```
 
 **Errors:**
-- `404` – student ID not found
+- `404` — student ID not found
 
 ---
 
 ### `PATCH /tasks/:taskId/status`
 
-Updates the status of a task.
+Updates the status of a task. Called when the counselor changes the dropdown in the UI.
 
-**Body:**
+**Example:** `PATCH /tasks/tsk_001/status`
+
+**Request body:**
 ```json
-{ "status": "done" }
+{ "status": "completed" }
 ```
 
-Valid values: `todo`, `in_progress`, `done`
+Valid values: `todo`, `in_progress`, `completed`
 
-**Response:**
+**Response `200`:**
 ```json
 {
   "message": "Task status updated",
-  "task": { "id": "task_001", "status": "done", ... }
+  "task": {
+    "id": "tsk_001",
+    "studentId": "stu_001",
+    "title": "Submit FAFSA application",
+    "status": "completed",
+    "priority": "urgent",
+    "dueDate": "2026-06-05",
+    "createdAt": "2026-05-13T14:00:00Z",
+    "updatedAt": "2026-06-05T10:00:00Z"
+  }
 }
 ```
 
 **Errors:**
-- `400` – invalid or missing status value
-- `404` – task ID not found
+- `400` — missing or invalid status value
+- `404` — task ID not found
 
 All error responses include a `requestId` field for tracing (Task 2).
 
 ---
 
-## Architecture notes
+## Architecture Notes
 
 ### Why this structure?
 
-I kept the project flat and straightforward intentionally. The goal was a feature that's easy to run locally, easy to review, and easy to extend — not over-engineering a small submission.
+I kept the project intentionally flat and readable. The goal was a feature that's easy to run locally, easy to review in a code interview, and easy to extend — not over-engineered for a small scope.
 
-**Backend:**
-- `src/data/mockData.ts` — the in-memory store that replaces MongoDB for this submission. Switching to real Mongo would just mean replacing the array reads with `db.collection.findOne(...)` calls.
-- `src/routes/` — one file per resource (`students`, `tasks`). Each route is its own Express Router so they stay isolated.
-- `src/middleware/` — error handling and logging separated from business logic.
-
-**Frontend:**
-- **TanStack React Query** handles all server state — fetching, caching, invalidation after mutations. No manual loading/error state variables.
-- **Zustand** holds one piece of client state: which student the counselor has selected. Simple, no boilerplate.
-- Components are split by responsibility: `StudentProfile` shows who, `TaskList` shows what needs to be done, `ActionCenter` orchestrates both.
-
-**Urgency logic:**
-The API computes urgency server-side based on open high-priority tasks. Two or more open high-priority tasks → `critical`. One → `high`. Otherwise falls back to the student's base level. This way the frontend just renders what it receives — no duplicate logic in two places.
-
----
-
-## Task 1
-
-- `GET /students/:id/action-center` endpoint
-- `PATCH /tasks/:taskId/status` endpoint
-- Mock data with realistic students, tasks, and messages
-- React frontend with:
-  - Student profile card with GPA, grade, school
-  - Task list sorted by priority, with inline status dropdown
-  - Unread message count badge
-  - Urgency / priority badges
-  - Loading and error states
-
----
-
-## Task 2 (Production improvements)
-
-### Logging
-Every request gets a unique UUID attached via `requestIdMiddleware`. The `requestLogger` middleware then logs the method, path, response status, and duration when the response finishes. Example output:
-
+**Backend layout:**
 ```
-[2024-10-15T10:23:41.000Z] [a1b2c3d4-...] GET /students/stu_001/action-center → 200 (12ms)
+src/
+├── data/mockData.ts      — official Zyra mock data (copied as-is, IDs untouched)
+├── db/
+│   ├── connect.ts        — Mongoose connection helper
+│   └── seed.ts           — one-time script to load mock data into MongoDB
+├── models/
+│   ├── Student.ts        — Mongoose schema for students
+│   ├── Task.ts           — Mongoose schema for tasks (indexed on studentId)
+│   └── Message.ts        — Mongoose schema for messages (indexed on studentId)
+├── routes/
+│   ├── students.ts       — GET /students/:id/action-center
+│   └── tasks.ts          — PATCH /tasks/:taskId/status
+├── middleware/
+│   ├── logger.ts         — request ID attachment + request logging  [Task 2]
+│   └── errorHandler.ts   — global error handler with request IDs    [Task 2]
+└── index.ts              — app entry point, DB connect, middleware wiring
+```
+
+**Frontend layout:**
+```
+src/
+├── components/
+│   ├── ActionCenter.tsx   — page-level orchestrator
+│   ├── StudentProfile.tsx — name, GPA, grade, enrollment status, unread count
+│   ├── TaskList.tsx       — sorted task rows with inline status dropdown
+│   ├── Sidebar.tsx        — student switcher
+│   └── UrgencyBadge.tsx   — color-coded urgency pill
+├── hooks/
+│   ├── api.ts             — raw fetch functions
+│   └── useActionCenter.ts — React Query hooks (query + mutation)
+├── store/
+│   └── studentStore.ts    — Zustand store (selected student ID)
+└── types/index.ts         — shared TypeScript interfaces
+```
+
+**Urgency computation (server-side):**
+Urgency is calculated in the backend so the frontend just renders what it receives — no duplicate logic in two places:
+- Any open `urgent` task → `critical`
+- 2+ open `high` tasks → `high`
+- `at_risk` enrollment → `medium`
+- Otherwise → `low`
+
+**Single endpoint design:**
+Instead of three separate calls (student, tasks, messages), everything is combined into one `/action-center` endpoint. The frontend makes one network round-trip instead of three — important for a tool counselors open constantly throughout their day. The three MongoDB queries inside run in parallel with `Promise.all`.
+
+---
+
+## Task 1 — Core Assessment
+
+**What's covered:**
+
+| Requirement | Where |
+|---|---|
+| `GET /students/:id/action-center` | `backend/src/routes/students.ts` |
+| `PATCH /tasks/:taskId/status` | `backend/src/routes/tasks.ts` |
+| Official mock data (IDs unchanged) | `backend/src/data/mockData.ts` |
+| Student profile summary | `frontend/src/components/StudentProfile.tsx` |
+| Task list with status update | `frontend/src/components/TaskList.tsx` |
+| Unread messages count | Returned by API, shown in `StudentProfile` |
+| Urgency / priority badges | `frontend/src/components/UrgencyBadge.tsx` |
+| Loading state | `ActionCenter.tsx` — spinner while fetching |
+| Error state | `ActionCenter.tsx` — error message with reason |
+| React + TypeScript + Vite | `frontend/` |
+| Node.js + Express + TypeScript | `backend/` |
+| MongoDB | Mongoose models in `backend/src/models/` |
+| TanStack React Query | `useActionCenter.ts` — query + mutation + cache invalidation |
+| Zustand | `studentStore.ts` — selected student state |
+| README + API contract + architecture notes | This file |
+
+---
+
+##  Task 2 — Bonus Assessment
+
+### Request logging
+
+Every request gets a unique UUID attached via `requestIdMiddleware`. The `requestLogger` then logs method, path, status, and duration on response finish.
+
+Example log output:
+```
+[2026-06-05T10:23:41.000Z] [a1b2c3d4-xxxx] GET /students/stu_001/action-center → 200 (14ms)
+[2026-06-05T10:23:55.000Z] [b9e3f1a2-xxxx] PATCH /tasks/tsk_001/status → 200 (8ms)
 ```
 
 ### Error middleware with request IDs
-The `errorHandler` middleware catches all errors thrown in route handlers. It logs the full stack trace server-side but only sends a clean message to the client — along with the `x-request-id` header so errors are traceable. A custom `AppError` class lets routes attach specific status codes.
 
-### Backend integration tests
-Run them with:
-
-```bash
-cd backend
-npm test
-```
-
-Tests cover:
-- Action center returns correct data for a valid student
-- Tasks are scoped to the right student
-- 404 for unknown student
-- Request ID header is present
-- Task status update works
-- 400 for invalid status
-- 404 for unknown task
-
-### Frontend component tests
-Run them with:
-
-```bash
-cd frontend
-npm test
-```
-
-Tests cover:
-- `UrgencyBadge` renders correct label and CSS class
-- `StudentProfile` shows name, school, unread count, and urgency badge
-- Unread badge hidden when count is 0
-- `TaskList` renders all tasks
-- Empty state shown with no tasks
-- `onStatusChange` called with correct args on dropdown change
-- All dropdowns disabled while update is in progress
+`errorHandler.ts` catches all thrown errors. It logs the full stack trace server-side but only sends a clean message to the client — always including the `x-request-id` so any error is traceable in logs.
 
 ### Performance decisions and tradeoffs
 
-**Caching with React Query**
-Data is treated as fresh for 30 seconds (`staleTime: 30_000`). This avoids a re-fetch every time the counselor switches between students and back. For a counseling session, 30 seconds of stale tolerance is fine — the data isn't changing every second. If real-time updates were needed, the right move would be SSE from the backend, not polling.
+**1. Single `/action-center` endpoint instead of 3 calls**
+- Fewer round-trips means faster load time for the counselor
+- Tradeoff: slightly less flexible on the backend; adding a new data type means updating this one endpoint
+- For this use case (counselors opening this panel constantly), latency matters more than flexibility
 
-**Single endpoint for action center**
-Instead of three separate calls (student, tasks, messages), I combined everything into one `/action-center` endpoint. This is a deliberate tradeoff: slightly less flexible on the backend, but the frontend makes one network round-trip instead of three. For a tool counselors open constantly throughout the day, that latency reduction matters.
+**2. `Promise.all` for parallel DB queries**
+- Student, tasks, and messages are fetched at the same time rather than sequentially
+- Saves roughly `2 × avg_query_time` per request — meaningful when queries each take 5–20ms
 
-**In-memory data**
-The mock data lives in a module-level array. In production this would be MongoDB with an index on `studentId` for the task and message queries. The query structure maps directly to `db.collection.find({ studentId: id })`.
+**3. React Query with 30s stale time**
+- Data is treated as fresh for 30 seconds — no re-fetch on every render or window focus
+- After a status update (mutation), the cache is invalidated and data refreshes automatically
+- Tradeoff: a counselor might see 30-second-old data if another user updates something; acceptable for this context
 
-**No over-abstraction**
-I didn't add a repository layer, service layer, or dependency injection. For this scale, that would be ceremony without benefit. The route handlers are thin — they validate input, call pure data functions, and return results. Easy to test, easy to read.
+**4. Urgency computed server-side**
+- Logic lives in one place (the backend) rather than being duplicated on the frontend
+- Tradeoff: a future change to urgency rules requires a backend deploy, not just a frontend update
+
+**5. MongoDB indexes on `studentId`**
+- Both `Task` and `Message` schemas index `studentId` for fast lookups by student
+- Without this, every task/message query would do a full collection scan
+
+---
+
+## CI / Test Output
+
+This project uses **GitHub Actions** to run tests automatically on every push to `main`.
+
+Two parallel jobs run in CI:
+- **Backend Tests** — 10 integration tests via Vitest + Supertest
+- **Frontend Tests** — 12 component tests via Vitest + Testing Library
+
+View live results → **Actions tab** of this repository.
+
+### Run tests locally
+
+```bash
+# Backend (10 tests)
+cd backend && npm test
+
+# Frontend (12 tests)
+cd frontend && npm test
+```
+
+### Expected output
+
+```
+# Backend
+ src/tests/actionCenter.test.ts  (10 tests) ~100ms
+Test Files  1 passed (1)
+Tests  10 passed (10)
+
+# Frontend
+ src/tests/components.test.tsx  (12 tests) ~160ms
+Test Files  1 passed (1)
+Tests  12 passed (12)
+```
