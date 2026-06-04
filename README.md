@@ -1,5 +1,7 @@
 # Zyra – Counselor Student Action Center
 
+![CI](https://github.com/Anandshah83/Zyra_Assignment/actions/workflows/ci.yml/badge.svg)
+
 A full-stack feature that gives counselors a fast, clear view of a student's priorities, tasks, unread messages, and urgency level — all in one place.
 
 ---
@@ -59,24 +61,27 @@ Returns everything the action center needs for a student.
 {
   "student": {
     "id": "stu_001",
-    "name": "Aisha Patel",
-    "email": "aisha.patel@school.edu",
+    "name": "Maya Patel",
+    "email": "maya.patel@school.edu",
     "grade": 11,
-    "gpa": 3.8,
-    "school": "Lincoln High School",
-    "urgencyLevel": "high"
+    "gpa": 3.2,
+    "counselorId": "csl_001",
+    "enrollmentStatus": "at_risk"
   },
   "tasks": [
     {
-      "id": "task_001",
-      "title": "Submit Common App essay draft",
-      "status": "in_progress",
-      "priority": "high",
-      "dueDate": "2024-11-01",
-      "category": "Application"
+      "id": "tsk_001",
+      "studentId": "stu_001",
+      "title": "Submit FAFSA application",
+      "description": "Deadline is approaching. Student has not started the form.",
+      "status": "todo",
+      "priority": "urgent",
+      "dueDate": "2026-06-05",
+      "createdAt": "2026-05-13T14:00:00Z",
+      "updatedAt": "2026-05-13T14:00:00Z"
     }
   ],
-  "unreadMessages": 3,
+  "unreadMessages": 2,
   "urgencyLevel": "critical"
 }
 ```
