@@ -1,7 +1,6 @@
 # Zyra – Counselor Student Action Center
 
 ![CI](https://github.com/Anandshah83/Zyra_Assignment/actions/workflows/ci.yml/badge.svg)
-
 A full-stack feature that gives counselors a fast, clear view of a student's priorities, tasks, unread messages, and urgency level — all in one place.
 
 ---
