@@ -1,7 +1,8 @@
 import type { ActionCenterData, TaskStatus } from "../types";
 
-const API_BASE = "/students";
-const TASKS_BASE = "/tasks";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+const API_BASE = `${API_BASE_URL}/students`;
+const TASKS_BASE = `${API_BASE_URL}/tasks`;
 
 export async function fetchActionCenter(
   studentId: string
